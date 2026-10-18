@@ -1,55 +1,59 @@
 from random import randint as rand
+from typing import Optional, Tuple, Union
+
+# Constants for number ranges
+RANGE_MULTIPLICATION: Tuple[int, int] = (2, 16)
+RANGE_ADDITION: Tuple[int, int] = (1, 2999)
+RANGE_SUBTRACTION: Tuple[int, int] = (1, 999)
 
 
-def generate_equation():
+def generate_equation() -> Optional[Tuple[str, Union[int, float]]]:
+    """Generate a random math equation and its correct answer."""
     r = rand(1, 11)
-    Multiplication = (2, 16)
-    Addition = (1, 2999)
-    Subtraction = (1, 999)
 
     if r == 1:
-        n1, n2 = rand(*Addition), rand(*Addition)
-        equation = f'{n1} + {n2}'
+        n1, n2 = rand(*RANGE_ADDITION), rand(*RANGE_ADDITION)
+        equation = f"{n1} + {n2}"
         answer = n1 + n2
     elif r == 2:
-        n1, n2 = rand(*Addition), rand(*Subtraction)
-        equation = f'{n1} - {n2}'
+        n1, n2 = rand(*RANGE_ADDITION), rand(*RANGE_SUBTRACTION)
+        equation = f"{n1} - {n2}"
         answer = n1 - n2
     elif r == 3:
-        n1, n2 = rand(*Multiplication), rand(*Multiplication)
-        equation = f'{n1} * {n2}'
+        n1, n2 = rand(*RANGE_MULTIPLICATION), rand(*RANGE_MULTIPLICATION)
+        equation = f"{n1} * {n2}"
         answer = n1 * n2
     elif r == 4:
-        n1, n2 = rand(*Multiplication), rand(*Addition)
-        equation = f'{n1}² + {n2}'
-        answer = n1 ** 2 + n2
+        n1, n2 = rand(*RANGE_MULTIPLICATION), rand(*RANGE_ADDITION)
+        equation = f"{n1}² + {n2}"
+        answer = (n1 ** 2) + n2
     elif r == 5:
-        n1 = rand(*Multiplication)
-        equation = f'{n1}²'
+        n1 = rand(*RANGE_MULTIPLICATION)
+        equation = f"{n1}²"
         answer = n1 ** 2
     elif r == 6:
-        n1 = rand(*Multiplication)
-        equation = f'\u221A({n1 ** 2})'
+        n1 = rand(*RANGE_MULTIPLICATION)
+        equation = f"√( {n1 ** 2} )"
         answer = n1
     elif r == 7:
         n1 = rand(2, 7)
-        equation = f'{n1}³'
+        equation = f"{n1}³"
         answer = n1 ** 3
     elif r == 8:
-        n1, n2 = rand(*Multiplication), rand(*Subtraction)
-        equation = f'{n1}² - {n2}'
-        answer = n1 ** 2 - n2
+        n1, n2 = rand(*RANGE_MULTIPLICATION), rand(*RANGE_SUBTRACTION)
+        equation = f"{n1}² - {n2}"
+        answer = (n1 ** 2) - n2
     elif r == 9:
-        n1, n2 = rand(*Multiplication), rand(2, 5)
-        equation = f'{n2} * {n1}²'
+        n1, n2 = rand(*RANGE_MULTIPLICATION), rand(2, 5)
+        equation = f"{n2} * {n1}²"
         answer = (n1 ** 2) * n2
     elif r == 10:
         n1 = rand(2, 10)
-        equation = f'{n1}⁻¹'
+        equation = f"{n1}⁻¹"
         answer = round(1 / n1, 3)
     elif r == 11:
         n1, n2 = rand(1, 100), rand(1, 100)
-        equation = f'{n1} + {n2}'
+        equation = f"{n1} + {n2}"
         answer = n1 + n2
     else:
         return None
@@ -57,42 +61,59 @@ def generate_equation():
     return equation, answer
 
 
-def get_user_input():
+def get_user_input() -> Union[float, str]:
+    """Get and validate user input, allowing numeric values or control commands."""
     while True:
+        user_input = input("Type the answer -> ").strip().lower()
+        
+        if user_input in ("exit", "count"):
+            return user_input
+            
         try:
-            user_input = input("Type the answer -> ")
             return float(user_input)
         except ValueError:
-            if user_input.lower() in ("exit", "count"):
-                return user_input.lower()
-            else:
-                print("Invalid input! Please enter a numeric answer.")
+            print("Invalid input! Please enter a numeric answer or a valid command.")
 
 
-def main():
+def display_goodbye(correct_count: int) -> None:
+    """Display the end-of-game summary banner."""
+    print("-" * 80)
+    print(f"- You solved {correct_count} equations correctly.")
+    print(80 * "*")
+    print(34 * "*" + " Good Game " + 35 * "*")
+    print(80 * "*")
+
+
+def main() -> None:
+    """Run the main game loop."""
     print("-" * 80)
     print(36 * "-" + " Welcome " + 35 * "-")
     print("-" * 80)
 
     correct_count = 0
+    
     while True:
-        equation, correct_answer = generate_equation()
+        equation_data = generate_equation()
+        if not equation_data:
+            continue
+            
+        equation, correct_answer = equation_data
         print(f"** Equation: {equation}")
+        
+        # Give the user up to 3 attempts per equation
         for _ in range(3):
             user_value = get_user_input()
-            if user_value == correct_answer:
+            
+            if user_value == "exit":
+                display_goodbye(correct_count)
+                return
+            elif user_value == "count":
+                print(f"You solved {correct_count} equations correctly.\n")
+                continue
+            elif user_value == correct_answer:
                 print("Correct!")
                 correct_count += 1
                 break
-            elif user_value == "exit":
-                print("-" * 80)
-                print(f"- You solved {correct_count} equations correctly.", end='\n')
-                print(80 * '*')
-                print(34 * '*' + ' Good Game ' + 35 * '*')
-                print(80 * '*')
-                exit()
-            elif user_value == 'count':
-                print(f"You solved {correct_count} equations correctly.", end='\n' * 2)
             else:
                 print("Incorrect! Try again.")
         else:

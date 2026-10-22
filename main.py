@@ -1,5 +1,6 @@
 from random import randint as rand, choice
 from typing import Optional, Tuple, Union, Dict, List
+from banners import WELCOME_BANNER, HELP_INSTRUCTIONS, MILESTONE_MESSAGE, get_goodbye_banner
 
 # Constants for number ranges
 RANGE_MULTIPLICATION: Tuple[int, int] = (2, 16)
@@ -127,33 +128,6 @@ def get_user_input() -> Union[float, str]:
             print("Invalid input! Please enter a numeric answer or a valid command.")
 
 
-def display_goodbye(correct_count: int) -> None:
-    """Display the end-of-game summary banner."""
-    print("-" * 80)
-    print(f"- You solved {correct_count} equations correctly.")
-    print(80 * "*")
-    print(34 * "*" + " Good Game " + 35 * "*")
-    print(80 * "*")
-
-
-def display_help() -> None:
-    """Display game instructions and available commands in simple English."""
-    print("\n" + "=" * 80)
-    print(" GAME INSTRUCTIONS ".center(80, "="))
-    print("=" * 80)
-    print(" Welcome to the Mental Math Training Game!")
-    print(" Your goal is to solve math equations to train your brain and working memory.")
-    print(" Periodically, your answers will be saved as memory variables (A and B).")
-    print(" These variables may appear in future equations to test your focus.")
-    print("-" * 80)
-    print(" AVAILABLE COMMANDS:")
-    print("   • help  - Show this help message and game rules.")
-    print("   • vars  - View your currently stored memory variables.")
-    print("   • count - Check how many equations you have solved correctly.")
-    print("   • exit  - Quit the game and see your final score.")
-    print("=" * 80 + "\n")
-
-
 def get_next_interval(var_count: int) -> int:
     """Return the equation interval based on the alternating sequence rules:
     - First interval (for Var 1): 8 to 14 equations.
@@ -168,9 +142,7 @@ def get_next_interval(var_count: int) -> int:
 
 def main() -> None:
     """Run the main game loop with working memory variables support (max 2)."""
-    print("-" * 80)
-    print(36 * "-" + " Welcome " + 35 * "-")
-    print("-" * 80)
+    print(WELCOME_BANNER)
 
     correct_count = 0
     solved_signatures = set()
@@ -203,10 +175,10 @@ def main() -> None:
             user_value = get_user_input()
             
             if user_value == "exit":
-                display_goodbye(correct_count)
+                print(get_goodbye_banner(correct_count))
                 return
             elif user_value == "help":
-                display_help()
+                print(HELP_INSTRUCTIONS)
                 continue  # Does NOT consume an attempt
             elif user_value == "count":
                 print(f"You solved {correct_count} equations correctly.\n")
@@ -255,9 +227,7 @@ def main() -> None:
                 
                 # Check for the 40-equation milestone
                 if correct_count == 40:
-                    print("\n" + "=" * 80)
-                    print("🎉 Milestone Reached! You have solved 40 equations! Incredible focus! 🎉")
-                    print("=" * 80 + "\n")
+                    print(MILESTONE_MESSAGE)
                 
                 break
             else:

@@ -1,6 +1,14 @@
+import signal
+import sys
 from random import randint as rand, choice
 from typing import Optional, Tuple, Union, Dict, List
-from banners import WELCOME_BANNER, HELP_INSTRUCTIONS, MILESTONE_MESSAGE, get_goodbye_banner
+from banners import (
+    WELCOME_BANNER, 
+    HELP_INSTRUCTIONS, 
+    MILESTONE_MESSAGE, 
+    get_goodbye_banner, 
+    get_interrupted_banner
+)
 
 # Constants for number ranges
 RANGE_MULTIPLICATION: Tuple[int, int] = (2, 16)
@@ -9,6 +17,21 @@ RANGE_SUBTRACTION: Tuple[int, int] = (1, 999)
 
 # Available variable names restricted to 2 max
 AVAILABLE_VAR_NAMES: List[str] = ["A", "B"]
+
+# Global variable to track score safely across signal handlers if needed
+_current_score = 0
+
+
+def signal_handler(sig, frame) -> None:
+    """Handle Ctrl+C (SIGINT) gracefully for a safe exit."""
+    print(get_interrupted_banner(_current_score))
+    sys.exit(0)
+
+
+def quit_signal_handler(sig, frame) -> None:
+    """Handle Ctrl+\ (SIGQUIT) gracefully for a safe exit on Unix systems."""
+    print(get_quit_banner(_current_score))
+    sys.exit(0)
 
 
 def generate_equation(memory_vars: Dict[str, Union[int, float]]) -> Optional[Tuple[str, Union[int, float], tuple]]:
@@ -117,7 +140,14 @@ def generate_equation(memory_vars: Dict[str, Union[int, float]]) -> Optional[Tup
 def get_user_input() -> Union[float, str]:
     """Get and validate user input, allowing numeric values or control commands."""
     while True:
-        user_input = input("Type the answer -> ").strip().lower()
+        try:
+            user_input = input("Type the answer -> ").strip().lower()
+        except (KeyboardInterrupt, EOFError):
+            # Handles Ctrl+C or Ctrl+D directly inside the input prompt safely
+            print()
+            global _current_score
+            print(get_interrupted_banner(_current_score))
+            sys.exit(0)
         
         if user_input in ("exit", "count", "vars", "help"):
             return user_input
@@ -141,9 +171,17 @@ def get_next_interval(var_count: int) -> int:
 
 
 def main() -> None:
-    """Run the main game loop with working memory variables support (max 2)."""
+    """Run the main game loop with working memory variables support and signal handling."""
+    # Register signal handler for SIGINT (Ctrl + C)
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # Register SIGQUIT (Ctrl + \) if supported by the platform (Unix/Linux/macOS)
+    if hasattr(signal, "SIGQUIT"):
+        signal.signal(signal.SIGQUIT, quit_signal_handler)
+
     print(WELCOME_BANNER)
 
+    global _current_score
     correct_count = 0
     solved_signatures = set()
     
@@ -196,6 +234,7 @@ def main() -> None:
             if user_value == correct_answer:
                 print("Correct!")
                 correct_count += 1
+                _current_score = correct_count  # Update global score for signals
                 solved_signatures.add(signature)
                 solved_since_last_var += 1
 

@@ -1,5 +1,5 @@
 """
-banners.py - Text resources, banners, and help instructions for the MAthBlitz.
+banners.py - Text resources, banners, and help instructions for the Mental Math Game.
 """
 
 # Welcome banner template
@@ -41,4 +41,15 @@ def get_goodbye_banner(correct_count: int) -> str:
   Score: {correct_count} equations solved correctly.
   
   Great workout for your brain today. See you next session!
+--------------------------------------------------------------------------------"""
+
+
+def get_interrupted_banner(correct_count: int) -> str:
+    """Return the formatted banner when the session is safely interrupted."""
+    return f"""
+--------------------------------------------------------------------------------
+  [!] Session interrupted securely.
+  Score: {correct_count} equations solved correctly.
+  
+  Stay focused and keep your mind sharp!
 --------------------------------------------------------------------------------"""

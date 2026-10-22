@@ -30,7 +30,7 @@ def signal_handler(sig, frame) -> None:
 
 def quit_signal_handler(sig, frame) -> None:
     """Handle Ctrl+\ (SIGQUIT) gracefully for a safe exit on Unix systems."""
-    print(get_quit_banner(_current_score))
+    print(get_interrupted_banner(_current_score))
     sys.exit(0)
 
 

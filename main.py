@@ -1,31 +1,72 @@
-from random import randint as rand
-from typing import Optional, Tuple, Union
+from random import randint as rand, choice
+from typing import Optional, Tuple, Union, Dict, List
 
 # Constants for number ranges
 RANGE_MULTIPLICATION: Tuple[int, int] = (2, 16)
 RANGE_ADDITION: Tuple[int, int] = (1, 2999)
 RANGE_SUBTRACTION: Tuple[int, int] = (1, 999)
 
+# Available variable names restricted to 2 max
+AVAILABLE_VAR_NAMES: List[str] = ["A", "B"]
 
-def generate_equation() -> Optional[Tuple[str, Union[int, float], tuple]]:
-    """Generate a random math equation, its correct answer, and a unique signature."""
+
+def generate_equation(memory_vars: Dict[str, Union[int, float]]) -> Optional[Tuple[str, Union[int, float], tuple]]:
+    """Generate a random math equation, its correct answer, and a unique signature.
+    Optionally incorporates a stored memory variable with a ~30% target probability.
+    """
     r = rand(1, 11)
+
+    # 30% direct chance to use a memory variable if any exist
+    use_var = False
+    chosen_var_name = None
+    chosen_var_val = None
+    
+    if memory_vars and rand(1, 100) <= 30:
+        # Filter variables for multiplication to avoid excessively large numbers
+        if r == 3:
+            small_vars = {k: v for k, v in memory_vars.items() if v <= 50}
+            if small_vars:
+                chosen_var_name = choice(list(small_vars.keys()))
+                chosen_var_val = small_vars[chosen_var_name]
+                use_var = True
+        else:
+            chosen_var_name = choice(list(memory_vars.keys()))
+            chosen_var_val = memory_vars[chosen_var_name]
+            use_var = True
 
     if r == 1:
         n1, n2 = rand(*RANGE_ADDITION), rand(*RANGE_ADDITION)
-        equation = f"{n1} + {n2}"
-        answer = n1 + n2
-        signature = ("add", tuple(sorted([n1, n2])))
+        if use_var:
+            equation = f"{chosen_var_name} + {n2}"
+            answer = chosen_var_val + n2
+            signature = ("add_var", chosen_var_name, n2)
+        else:
+            equation = f"{n1} + {n2}"
+            answer = n1 + n2
+            signature = ("add", tuple(sorted([n1, n2])))
+            
     elif r == 2:
         n1, n2 = rand(*RANGE_ADDITION), rand(*RANGE_SUBTRACTION)
-        equation = f"{n1} - {n2}"
-        answer = n1 - n2
-        signature = ("sub", n1, n2)
+        if use_var:
+            equation = f"{chosen_var_name} - {n2}"
+            answer = chosen_var_val - n2
+            signature = ("sub_var", chosen_var_name, n2)
+        else:
+            equation = f"{n1} - {n2}"
+            answer = n1 - n2
+            signature = ("sub", n1, n2)
+            
     elif r == 3:
         n1, n2 = rand(*RANGE_MULTIPLICATION), rand(*RANGE_MULTIPLICATION)
-        equation = f"{n1} * {n2}"
-        answer = n1 * n2
-        signature = ("mul", tuple(sorted([n1, n2])))
+        if use_var:
+            equation = f"{chosen_var_name} * {n2}"
+            answer = chosen_var_val * n2
+            signature = ("mul_var", chosen_var_name, n2)
+        else:
+            equation = f"{n1} * {n2}"
+            answer = n1 * n2
+            signature = ("mul", tuple(sorted([n1, n2])))
+            
     elif r == 4:
         n1, n2 = rand(*RANGE_MULTIPLICATION), rand(*RANGE_ADDITION)
         equation = f"{n1}² + {n2}"
@@ -77,7 +118,7 @@ def get_user_input() -> Union[float, str]:
     while True:
         user_input = input("Type the answer -> ").strip().lower()
         
-        if user_input in ("exit", "count"):
+        if user_input in ("exit", "count", "vars"):
             return user_input
             
         try:
@@ -95,17 +136,39 @@ def display_goodbye(correct_count: int) -> None:
     print(80 * "*")
 
 
+def get_next_interval(var_count: int) -> int:
+    """Return the equation interval based on the alternating sequence rules:
+    - First interval (for Var 1): 8 to 14 equations.
+    - Second interval (for Var 2): 20 to 30 equations.
+    - Alternates subsequently.
+    """
+    if var_count % 2 == 0:
+        return rand(8, 14)
+    else:
+        return rand(20, 30)
+
+
 def main() -> None:
-    """Run the main game loop."""
+    """Run the main game loop with working memory variables support (max 2)."""
     print("-" * 80)
     print(36 * "-" + " Welcome " + 35 * "-")
     print("-" * 80)
+    print("Tip: Type 'vars' anytime to view your currently stored memory variables.\n")
 
     correct_count = 0
     solved_signatures = set()
     
+    # Working memory storage structures (Max 2 variables)
+    memory_vars: Dict[str, Union[int, float]] = {}
+    var_queue: List[str] = []
+    
+    # Track total variables created to alternate interval sequences
+    total_vars_created = 0
+    equations_until_next_var = get_next_interval(total_vars_created)
+    solved_since_last_var = 0
+
     while True:
-        equation_data = generate_equation()
+        equation_data = generate_equation(memory_vars)
         if not equation_data:
             continue
             
@@ -127,10 +190,46 @@ def main() -> None:
             elif user_value == "count":
                 print(f"You solved {correct_count} equations correctly.\n")
                 continue
+            elif user_value == "vars":
+                if memory_vars:
+                    print("\n--- Active Memory Variables ---")
+                    for v_name, v_val in memory_vars.items():
+                        print(f"  {v_name} = {v_val}")
+                    print("-" * 31 + "\n")
+                else:
+                    print("\nNo memory variables stored yet. Keep solving!\n")
+                continue
             elif user_value == correct_answer:
                 print("Correct!")
                 correct_count += 1
                 solved_signatures.add(signature)
+                solved_since_last_var += 1
+
+                # Check if it's time to store a new variable based on the alternating interval
+                if solved_since_last_var >= equations_until_next_var:
+                    # Determine next variable name from pool ["A", "B"]
+                    next_var_name = None
+                    for name in AVAILABLE_VAR_NAMES:
+                        if name not in memory_vars:
+                            next_var_name = name
+                            break
+                    
+                    # If both slots (A and B) are full, evict the oldest one (FIFO)
+                    if not next_var_name:
+                        oldest_name = var_queue.pop(0)
+                        del memory_vars[oldest_name]
+                        next_var_name = oldest_name
+
+                    # Store the correct answer as the new variable value
+                    memory_vars[next_var_name] = correct_answer
+                    var_queue.append(next_var_name)
+                    total_vars_created += 1
+                    
+                    print(f"\n🧠 [Memory Alert] New variable '{next_var_name}' stored with value: {correct_answer} (Type 'vars' to check)\n")
+                    
+                    # Reset counter and set the next interval in the sequence
+                    solved_since_last_var = 0
+                    equations_until_next_var = get_next_interval(total_vars_created)
                 
                 # Check for the 40-equation milestone
                 if correct_count == 40:
@@ -140,10 +239,11 @@ def main() -> None:
                 
                 break
             else:
-                print("Incorrect! Try again.")
+                print("Incorrect! Test again.")
         else:
             print("Incorrect! The answer is:", correct_answer)
 
 
 if __name__ == "__main__":
     main()
+    

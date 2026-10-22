@@ -118,7 +118,7 @@ def get_user_input() -> Union[float, str]:
     while True:
         user_input = input("Type the answer -> ").strip().lower()
         
-        if user_input in ("exit", "count", "vars"):
+        if user_input in ("exit", "count", "vars", "help"):
             return user_input
             
         try:
@@ -134,6 +134,24 @@ def display_goodbye(correct_count: int) -> None:
     print(80 * "*")
     print(34 * "*" + " Good Game " + 35 * "*")
     print(80 * "*")
+
+
+def display_help() -> None:
+    """Display game instructions and available commands in simple English."""
+    print("\n" + "=" * 80)
+    print(" GAME INSTRUCTIONS ".center(80, "="))
+    print("=" * 80)
+    print(" Welcome to the Mental Math Training Game!")
+    print(" Your goal is to solve math equations to train your brain and working memory.")
+    print(" Periodically, your answers will be saved as memory variables (A and B).")
+    print(" These variables may appear in future equations to test your focus.")
+    print("-" * 80)
+    print(" AVAILABLE COMMANDS:")
+    print("   • help  - Show this help message and game rules.")
+    print("   • vars  - View your currently stored memory variables.")
+    print("   • count - Check how many equations you have solved correctly.")
+    print("   • exit  - Quit the game and see your final score.")
+    print("=" * 80 + "\n")
 
 
 def get_next_interval(var_count: int) -> int:
@@ -153,7 +171,6 @@ def main() -> None:
     print("-" * 80)
     print(36 * "-" + " Welcome " + 35 * "-")
     print("-" * 80)
-    print("Tip: Type 'vars' anytime to view your currently stored memory variables.\n")
 
     correct_count = 0
     solved_signatures = set()
@@ -188,6 +205,9 @@ def main() -> None:
             if user_value == "exit":
                 display_goodbye(correct_count)
                 return
+            elif user_value == "help":
+                display_help()
+                continue  # Does NOT consume an attempt
             elif user_value == "count":
                 print(f"You solved {correct_count} equations correctly.\n")
                 continue  # Does NOT consume an attempt
@@ -243,64 +263,7 @@ def main() -> None:
             else:
                 attempts += 1
                 if attempts < 3:
-                    print("Incorrect! Try again.")            user_value = get_user_input()
-            
-            if user_value == "exit":
-                display_goodbye(correct_count)
-                return
-            elif user_value == "count":
-                print(f"You solved {correct_count} equations correctly.\n")
-                continue
-            elif user_value == "vars":
-                if memory_vars:
-                    print("\n--- Active Memory Variables ---")
-                    for v_name, v_val in memory_vars.items():
-                        print(f"  {v_name} = {v_val}")
-                    print("-" * 31 + "\n")
-                else:
-                    print("\nNo memory variables stored yet. Keep solving!\n")
-                continue
-            elif user_value == correct_answer:
-                print("Correct!")
-                correct_count += 1
-                solved_signatures.add(signature)
-                solved_since_last_var += 1
-
-                # Check if it's time to store a new variable based on the alternating interval
-                if solved_since_last_var >= equations_until_next_var:
-                    # Determine next variable name from pool ["A", "B"]
-                    next_var_name = None
-                    for name in AVAILABLE_VAR_NAMES:
-                        if name not in memory_vars:
-                            next_var_name = name
-                            break
-                    
-                    # If both slots (A and B) are full, evict the oldest one (FIFO)
-                    if not next_var_name:
-                        oldest_name = var_queue.pop(0)
-                        del memory_vars[oldest_name]
-                        next_var_name = oldest_name
-
-                    # Store the correct answer as the new variable value
-                    memory_vars[next_var_name] = correct_answer
-                    var_queue.append(next_var_name)
-                    total_vars_created += 1
-                    
-                    print(f"\n🧠 [Memory Alert] New variable '{next_var_name}' stored with value: {correct_answer} (Type 'vars' to check)\n")
-                    
-                    # Reset counter and set the next interval in the sequence
-                    solved_since_last_var = 0
-                    equations_until_next_var = get_next_interval(total_vars_created)
-                
-                # Check for the 40-equation milestone
-                if correct_count == 40:
-                    print("\n" + "=" * 80)
-                    print("🎉 Milestone Reached! You have solved 40 equations! Incredible focus! 🎉")
-                    print("=" * 80 + "\n")
-                
-                break
-            else:
-                print("Incorrect! Test again.")
+                    print("Incorrect! Try again.")
         else:
             print("Incorrect! The answer is:", correct_answer)
 

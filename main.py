@@ -29,7 +29,7 @@ def signal_handler(sig, frame) -> None:
 
 
 def quit_signal_handler(sig, frame) -> None:
-    """Handle Ctrl+\ (SIGQUIT) gracefully for a safe exit on Unix systems."""
+    """Handle Ctrl+backslash (SIGQUIT) gracefully for a safe exit on Unix systems."""
     print(get_interrupted_banner(_current_score))
     sys.exit(0)
 
@@ -182,6 +182,7 @@ def main() -> None:
     print(WELCOME_BANNER)
 
     global _current_score
+    _current_score = 0
     correct_count = 0
     solved_signatures = set()
     

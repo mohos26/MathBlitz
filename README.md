@@ -6,7 +6,7 @@ during each session.
 
 ## Requirements
 
-- Python 3.8 or newer
+- Python 3.10 or newer
 
 The game uses only the Python standard library.
 
